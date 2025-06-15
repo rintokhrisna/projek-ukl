@@ -57,7 +57,7 @@ class NewsController extends Controller
         // Buat berita baru
         News::create($validatedData);
 
-        return redirect()->route('news.index')->with('success', 'Berita berhasil ditambahkan!');
+        return redirect()->route('news.public_index')->with('success', 'Berita berhasil ditambahkan!');
     }
 
     /**

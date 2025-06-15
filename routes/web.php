@@ -2,7 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NewsController;
-use App\Http\Controllers\CommentController; // Pastikan ini ada
+use App\Http\Controllers\CommentController;
+use App\Models\News; // Import model News
 
 /*
 |--------------------------------------------------------------------------
@@ -17,7 +18,9 @@ use App\Http\Controllers\CommentController; // Pastikan ini ada
 
 // Rute untuk Landing Page (Root URL)
 Route::get('/', function () {
-    return view('welcome');
+    // Ambil 3 berita terbaru
+    $latestNews = News::latest()->take(3)->get();
+    return view('welcome', compact('latestNews'));
 });
 
 // Rute untuk Daftar Berita Publik (Hanya Lihat)
@@ -27,7 +30,6 @@ Route::get('/news-public', [NewsController::class, 'publicIndex'])->name('news.p
 Route::resource('news', NewsController::class);
 
 // Rute Resource untuk Comments (CRUD)
-// Perhatikan bahwa 'edit' tidak dikecualikan di sini, jadi rute GET untuk comments/{comment}/edit akan dibuat.
 Route::resource('comments', CommentController::class)->except(['create', 'show']);
 
 // Anda dapat menambahkan rute lain di sini

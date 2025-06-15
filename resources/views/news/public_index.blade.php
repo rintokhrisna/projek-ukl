@@ -20,6 +20,9 @@
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold text-gray-800">Artikel Berita</h1>
             <a href="{{ url('/') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">Kembali ke Beranda</a>
+             <div class="flex space-x-4">
+                <a href="{{ route('news.create') }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 transform hover:scale-105">Tambahkan Berita</a>
+            </div>
         </div>
 
         @if ($news->isEmpty())

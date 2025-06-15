@@ -46,6 +46,7 @@
             <a href="/" class="text-white text-2xl font-bold rounded-lg hover:text-gray-300 transition duration-300">Portal Berita</a>
             <div class="flex space-x-4">
                 <a href="{{ route('news.create') }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 transform hover:scale-105">Tambahkan Berita</a>
+                <a href="{{ route('news.public_index') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 transform hover:scale-105">Lihat Berita</a>
             </div>
         </div>
     </nav>
@@ -59,21 +60,53 @@
             <p class="text-lg sm:text-xl md:text-2xl mb-8 font-light drop-shadow-md">
                 Baca artikel menarik dan tetap terinformasi.
             </p>
-            {{-- Tombol ini sekarang mengarah ke halaman berita publik --}}
             <a href="{{ route('news.public_index') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-lg shadow-xl transition duration-300 transform hover:scale-105">
                 Lihat Berita
             </a>
         </div>
     </header>
 
-    <!-- Content Section - Example -->
+    <!-- Content Section - About Us -->
     <main class="container mx-auto p-4 sm:p-6 md:p-8 mt-8">
-        <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+        <div class="bg-white p-6 rounded-lg shadow-lg text-center mb-12">
             <h2 class="text-3xl font-bold text-gray-800 mb-4">Tentang Kami</h2>
             <p class="text-gray-700 leading-relaxed max-w-2xl mx-auto">
                 Kami adalah sumber terpercaya Anda untuk berita terkini dan artikel mendalam dari berbagai kategori.
                 Tetap terhubung dengan dunia melalui informasi yang akurat dan relevan.
             </p>
+        </div>
+
+        ---
+
+        <!-- Latest News Section -->
+        <div class="mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 text-center mb-8">Berita Terbaru</h2>
+            @if ($latestNews->isEmpty())
+                <p class="text-gray-600 text-lg text-center">Tidak ada berita terbaru untuk ditampilkan saat ini.</p>
+            @else
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    @foreach ($latestNews as $newsItem)
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition duration-300">
+                            @if ($newsItem->image)
+                                <img src="{{ $newsItem->image }}" alt="{{ $newsItem->title }}" class="w-full h-48 object-cover">
+                            @else
+                                <div class="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-500 text-base">Tidak Ada Gambar</div>
+                            @endif
+                            <div class="p-5">
+                                <h3 class="text-xl font-bold text-gray-800 mb-2 truncate">{{ $newsItem->title }}</h3>
+                                <p class="text-gray-600 text-sm mb-3">
+                                    <span class="font-semibold">Dipublikasikan:</span> {{ $newsItem->published_at ? \Carbon\Carbon::parse($newsItem->published_at)->format('d M Y') : 'N/A' }}
+                                </p>
+                                <p class="text-gray-700 text-base line-clamp-3 mb-4">{{ $newsItem->body }}</p>
+                                <a href="{{ route('news.show', $newsItem->id) }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition duration-300">Baca Selengkapnya</a>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+            <div class="text-center mt-8">
+                <a href="{{ route('news.public_index') }}" class="inline-block bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg shadow-sm transition duration-300">Lihat Semua Berita</a>
+            </div>
         </div>
     </main>
 

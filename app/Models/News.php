@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str; // Import Str facade untuk slug
 
 class News extends Model
 {
@@ -19,7 +20,8 @@ class News extends Model
         'image',
         'body',
         'published_at',
-        'views', // Pastikan 'views' juga ada di fillable jika Anda ingin bisa mengisinya secara massal
+        'views',
+        'slug', // Tambahkan 'slug' ke fillable
     ];
 
     /**
@@ -33,11 +35,21 @@ class News extends Model
 
     /**
      * Get the comments for the news article.
-     * Ini mendefinisikan relasi one-to-many: satu berita memiliki banyak komentar.
-     * Foreign key 'news_id' di tabel 'comments' akan digunakan untuk menghubungkan ke 'id' berita.
      */
     public function comments()
     {
         return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Set the title and automatically generate the slug.
+     *
+     * @param  string  $value
+     * @return void
+     */
+    public function setTitleAttribute($value)
+    {
+        $this->attributes['title'] = $value;
+        $this->attributes['slug'] = Str::slug($value); // Otomatis membuat slug dari judul
     }
 }

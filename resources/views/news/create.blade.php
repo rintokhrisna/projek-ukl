@@ -58,7 +58,7 @@
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300">
                     Create News
                 </button>
-                <a href="{{ route('news.index') }}" class="inline-block align-baseline font-bold text-sm text-gray-600 hover:text-gray-800">
+                <a href="{{ route('news.public_index') }}" class="inline-block align-baseline font-bold text-sm text-gray-600 hover:text-gray-800">
                     Cancel
                 </a>
             </div>
