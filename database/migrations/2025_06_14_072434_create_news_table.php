@@ -13,8 +13,6 @@ return new class extends Migration
     {
         Schema::create('news', function (Blueprint $table) {
             $table->id(); // Kolom ID sebagai Primary Key
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Foreign Key ke tabel users (penulis berita)
-            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade'); // Foreign Key ke tabel categories
             $table->string('title'); // Judul berita
             $table->string('slug')->unique(); // Slug berita, harus unik
             $table->string('image')->nullable(); // Path gambar utama berita, bisa kosong

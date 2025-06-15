@@ -2,24 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\News; // Import model News
-use App\Models\User; // Import model User untuk dropdown penulis
-use App\Models\Category; // Import model Category untuk dropdown kategori
+use App\Models\News;
 use Illuminate\Http\Request;
-use App\Http\Requests\NewsStoreRequest; // Import Form Request kita
-use Illuminate\Support\Str; // Untuk membuat slug
-use Illuminate\Support\Facades\Storage; // Untuk upload gambar
+use Illuminate\Support\Facades\Storage;
 
 class NewsController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource for admin (with full CRUD options).
      */
     public function index()
     {
-        // Nanti akan menampilkan daftar berita
-        $news = News::with(['user', 'category'])->latest()->paginate(10);
+        $news = News::latest()->paginate(10);
         return view('news.index', compact('news'));
+    }
+
+    /**
+     * Display a public, read-only listing of the resource.
+     */
+    public function publicIndex()
+    {
+        // Mengambil semua berita terbaru, dengan paginasi
+        $news = News::latest()->paginate(9); // Contoh: tampilkan 9 berita per halaman
+        return view('news.public_index', compact('news'));
     }
 
     /**
@@ -27,38 +32,31 @@ class NewsController extends Controller
      */
     public function create()
     {
-        // Ambil semua user (untuk dropdown penulis)
-        $users = User::all();
-        // Ambil semua kategori (untuk dropdown kategori)
-        $categories = Category::all();
-
-        // Tampilkan form penambahan berita baru, kirim data users dan categories
-        return view('news.create', compact('users', 'categories'));
+        return view('news.create');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(NewsStoreRequest $request)
+    public function store(Request $request)
     {
-        // Validasi data menggunakan NewsStoreRequest
-        $validatedData = $request->validated();
+        // Validasi input dari form
+        $validatedData = $request->validate([
+            'title' => 'required|string|max:255',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Maks 2MB
+            'body' => 'required|string',
+            'published_at' => 'nullable|date',
+        ]);
 
-        // Tangani upload gambar jika ada
+        // Handle upload gambar jika ada
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('news_images', 'public'); // Simpan di storage/app/public/news_images
-            $validatedData['image'] = $imagePath;
+            $imagePath = $request->file('image')->store('public/images/news');
+            $validatedData['image'] = Storage::url($imagePath);
         }
 
-        // Pastikan slug dibuat jika tidak ada dari input (atau jika perlu di-generate ulang)
-        if (!isset($validatedData['slug']) || empty($validatedData['slug'])) {
-            $validatedData['slug'] = Str::slug($validatedData['title']);
-        }
-        
-        // Buat berita baru di database
+        // Buat berita baru
         News::create($validatedData);
 
-        // Redirect ke halaman daftar berita dengan pesan sukses
         return redirect()->route('news.index')->with('success', 'Berita berhasil ditambahkan!');
     }
 
@@ -67,7 +65,16 @@ class NewsController extends Controller
      */
     public function show(News $news)
     {
-        // Nanti akan menampilkan detail berita
+        // Eager load hanya komentar tingkat atas (parent_id is null) dan balasannya secara rekursif.
+        // Ini memastikan semua komentar terkait dengan berita dimuat untuk ditampilkan.
+        $news->load(['comments' => function ($query) {
+            $query->whereNull('parent_id') // Filter untuk hanya mengambil komentar utama
+                  ->with('replies') // Load balasannya secara rekursif
+                  ->orderBy('created_at', 'asc'); // Urutkan komentar (dan balasannya) berdasarkan waktu pembuatan
+        }]);
+
+        // Increment jumlah tampilan setiap kali berita diakses
+        $news->increment('views');
         return view('news.show', compact('news'));
     }
 
@@ -76,10 +83,7 @@ class NewsController extends Controller
      */
     public function edit(News $news)
     {
-        // Nanti akan menampilkan form edit berita
-        $users = User::all();
-        $categories = Category::all();
-        return view('news.edit', compact('news', 'users', 'categories'));
+        return view('news.edit', compact('news'));
     }
 
     /**
@@ -87,38 +91,28 @@ class NewsController extends Controller
      */
     public function update(Request $request, News $news)
     {
-        // Nanti akan mengupdate berita
-        // Anda juga bisa buat NewsUpdateRequest seperti UserUpdateRequest
-        $request->validate([
+        // Validasi input
+        $validatedData = $request->validate([
             'title' => 'required|string|max:255',
-            'slug' => ['required', 'string', 'max:255', Rule::unique('news', 'slug')->ignore($news->id)],
-            'user_id' => 'required|exists:users,id',
-            'category_id' => 'required|exists:categories,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'body' => 'required|string',
             'published_at' => 'nullable|date',
         ]);
 
-        $validatedData = $request->all();
-
+        // Handle update gambar jika ada
         if ($request->hasFile('image')) {
             // Hapus gambar lama jika ada
             if ($news->image) {
-                Storage::disk('public')->delete($news->image);
+                Storage::delete(str_replace('/storage', 'public', $news->image));
             }
-            $imagePath = $request->file('image')->store('news_images', 'public');
-            $validatedData['image'] = $imagePath;
+            $imagePath = $request->file('image')->store('public/images/news');
+            $validatedData['image'] = Storage::url($imagePath);
         } else {
-            // Pertahankan gambar lama jika tidak ada gambar baru yang diunggah
+            // Jika tidak ada gambar baru, pertahankan gambar lama
             $validatedData['image'] = $news->image;
         }
-        
-        // Regenerate slug if title changes and slug is not manually set
-        if (!isset($validatedData['slug']) || empty($validatedData['slug']) || $validatedData['slug'] == Str::slug($news->title)) {
-             $validatedData['slug'] = Str::slug($validatedData['title']);
-        }
 
-
+        // Update berita
         $news->update($validatedData);
 
         return redirect()->route('news.index')->with('success', 'Berita berhasil diperbarui!');
@@ -129,12 +123,14 @@ class NewsController extends Controller
      */
     public function destroy(News $news)
     {
-        // Nanti akan menghapus berita
-        // Hapus juga gambar terkait jika ada
+        // Hapus gambar terkait jika ada
         if ($news->image) {
-            Storage::disk('public')->delete($news->image);
+            Storage::delete(str_replace('/storage', 'public', $news->image));
         }
+
+        // Hapus berita (ini juga akan menghapus komentar terkait karena onDelete('cascade') di migrasi)
         $news->delete();
+
         return redirect()->route('news.index')->with('success', 'Berita berhasil dihapus!');
     }
 }
